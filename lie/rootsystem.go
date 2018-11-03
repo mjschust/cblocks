@@ -25,12 +25,19 @@ type RootSystem interface {
 
 // NewTypeARootSystem constructs a new type A root system of given rank.
 func NewTypeARootSystem(rank int) RootSystem {
-	return typeA{rank}
+	// Construct rho ahead-of-time since it can be heavily used
+	rho := make([]int, rank, rank+1)
+	for i := 0; i < rank; i++ {
+		rho[i] = 1
+	}
+
+	return typeA{rank, rho}
 }
 
 // typeA represents the Lie algebra of type A with the specified rank.
 type typeA struct {
 	rank int
+	rho  []int
 }
 
 // Rank returns the rank of the root system.
@@ -128,12 +135,7 @@ func (rtsys typeA) Weights(level int) []Weight {
 
 // Rho returns one-half the sum of the positive roots of the algebra.
 func (rtsys typeA) Rho() Weight {
-	rho := rtsys.NewWeight()
-	for i := 0; i < rtsys.rank; i++ {
-		rho[i] = 1
-	}
-
-	return rho
+	return rtsys.rho
 }
 
 // Level computes the 'level' of the given weight, i.e. its product with the highest root.

@@ -1,6 +1,6 @@
 package util
 
-// VectorMap is a simple trie-based map from a float slice to arbitrary type values
+// VectorMap is a simple hash-based map from an int slice to arbitrary type values
 type VectorMap interface {
 	Get([]int) (interface{}, bool)
 	Put([]int, interface{})

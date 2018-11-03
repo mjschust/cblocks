@@ -83,19 +83,21 @@ func (bun cbbundleImpl) Rank() *big.Int {
 	return product.Multiplicity(alg.Dual(wts[0]))
 }
 
+func (bun cbbundleImpl) degree(wt1, wt2, wt3, wt4 lie.Weight) {
+
+}
+
 type symCbbundleImpl struct {
 	cbbundleImpl
 }
 
 func (bun symCbbundleImpl) SymmetrizedDivisor() []*big.Rat {
-	// Only works for symmetric bundles...need to refactor
 	alg := bun.alg
 	wts := make([]lie.WeightPoly, len(bun.wts))
 	for i := range bun.wts {
 		wts[i] = bun.wts[i]
 	}
 	n := len(bun.wts)
-	rho := alg.Rho()
 	prod := alg.FusionProduct(bun.ell)
 
 	poly := wts[0]
@@ -108,7 +110,7 @@ func (bun symCbbundleImpl) SymmetrizedDivisor() []*big.Rat {
 
 	// Calculate the starting point of each coord
 	rslt := big.NewInt(0)
-	bun.casimirScalar(wts[0].(lie.Weight), rho, rslt)
+	bun.casimirScalar(wts[0].(lie.Weight), rslt)
 	rslt.Mul(rslt, rk)
 	denom := big.NewInt(int64(n - 1))
 	baseSummand := big.NewRat(0, 1)
@@ -135,7 +137,7 @@ func (bun symCbbundleImpl) SymmetrizedDivisor() []*big.Rat {
 		wfSum := big.NewInt(0)
 		for _, mustar := range poly1.Weights() {
 			mu := alg.Dual(mustar)
-			bun.casimirScalar(mu, rho, rslt)
+			bun.casimirScalar(mu, rslt)
 			rslt.Mul(rslt, poly1.Multiplicity(mustar))
 			rslt.Mul(rslt, poly2.Multiplicity(mu))
 			wfSum.Add(wfSum, rslt)
@@ -150,7 +152,10 @@ func (bun symCbbundleImpl) SymmetrizedDivisor() []*big.Rat {
 	return retVec
 }
 
-func (bun cbbundleImpl) casimirScalar(wt, rho lie.Weight, rslt *big.Int) {
+// Computes the casimir scalar of the given weight, scaled by the killing form
+// factor.
+func (bun cbbundleImpl) casimirScalar(wt lie.Weight, rslt *big.Int) {
+	rho := bun.alg.Rho()
 	rslt.SetInt64(int64(
 		bun.alg.IntKillingForm(wt, wt) + 2*bun.alg.IntKillingForm(wt, rho)))
 }
