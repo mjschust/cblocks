@@ -83,8 +83,48 @@ func (bun cbbundleImpl) Rank() *big.Int {
 	return product.Multiplicity(alg.Dual(wts[0]))
 }
 
-func (bun cbbundleImpl) degree(wt1, wt2, wt3, wt4 lie.Weight) {
+// degree computes the degree of the 4-point bundle determined by the given weights and this
+// bundle's level. This calculation is essentially a normalized divisor calculation
+func (bun cbbundleImpl) degree(wt1, wt2, wt3, wt4 lie.Weight) *big.Int {
+	alg := bun.alg
+	ell := bun.ell
+	rslt := big.NewInt(0)
+	retVal := big.NewInt(0)
 
+	// Compute sum of casimir scalars
+	bun.casimirScalar(wt1, rslt)
+	retVal.Add(retVal, rslt)
+	bun.casimirScalar(wt2, rslt)
+	retVal.Add(retVal, rslt)
+	bun.casimirScalar(wt3, rslt)
+	retVal.Add(retVal, rslt)
+	bun.casimirScalar(wt4, rslt)
+	retVal.Add(retVal, rslt)
+
+	// Multiply by rank of bundle
+	product := alg.Fusion(ell, wt2, wt3, wt4)
+	rk := product.Multiplicity(alg.Dual(wt1))
+	retVal.Mul(retVal, rk)
+
+	// Subtract weighted factorizations
+	poly1 := alg.Fusion(ell, wt1, wt2)
+	poly2 := alg.Fusion(ell, wt3, wt4)
+	retVal.Sub(retVal, bun.weightedFactor(poly1, poly2))
+	poly1 = alg.Fusion(ell, wt1, wt3)
+	poly2 = alg.Fusion(ell, wt2, wt4)
+	retVal.Sub(retVal, bun.weightedFactor(poly1, poly2))
+	poly1 = alg.Fusion(ell, wt1, wt4)
+	poly2 = alg.Fusion(ell, wt2, wt3)
+	retVal.Sub(retVal, bun.weightedFactor(poly1, poly2))
+
+	// Divide by divisor factor
+	denom := bun.divisorDenom()
+	a := big.NewRat(0, 1)
+	a.SetInt(retVal)
+	a.Quo(a, denom)
+	retVal.Set(a.Num())
+
+	return retVal
 }
 
 type symCbbundleImpl struct {
@@ -100,6 +140,7 @@ func (bun symCbbundleImpl) SymmetrizedDivisor() []*big.Rat {
 	n := len(bun.wts)
 	prod := alg.FusionProduct(bun.ell)
 
+	// Calculate the rank and fusion products used in calculation
 	poly := wts[0]
 	prodSlc := make([]lie.WeightPoly, n)
 	for i := 0; i < n-2; i++ {
@@ -117,9 +158,7 @@ func (bun symCbbundleImpl) SymmetrizedDivisor() []*big.Rat {
 	baseSummand.SetFrac(rslt, denom)
 
 	// Prepare the common denominator for the coords
-	sumDenom := big.NewRat(0, 1)
-	denom.SetInt64(int64(2 * (bun.ell + alg.DualCoxeter()) * alg.KillingFactor()))
-	sumDenom.SetInt(denom)
+	sumDenom := bun.divisorDenom()
 
 	// Compute the output vector
 	a := big.NewRat(0, 1)
@@ -134,14 +173,7 @@ func (bun symCbbundleImpl) SymmetrizedDivisor() []*big.Rat {
 		// Compute "weighted" factorization calculation
 		poly1 := prodSlc[i]
 		poly2 := prodSlc[n-i]
-		wfSum := big.NewInt(0)
-		for _, mustar := range poly1.Weights() {
-			mu := alg.Dual(mustar)
-			bun.casimirScalar(mu, rslt)
-			rslt.Mul(rslt, poly1.Multiplicity(mustar))
-			rslt.Mul(rslt, poly2.Multiplicity(mu))
-			wfSum.Add(wfSum, rslt)
-		}
+		wfSum := bun.weightedFactor(poly1, poly2)
 		a.SetInt(wfSum)
 
 		summand.Sub(summand, a)
@@ -150,6 +182,33 @@ func (bun symCbbundleImpl) SymmetrizedDivisor() []*big.Rat {
 	}
 
 	return retVec
+}
+
+// weightedFactor Computes the rank factorization of the given weight polynomials weighted
+// by casimir scalars
+func (bun cbbundleImpl) weightedFactor(poly1, poly2 lie.WeightPoly) *big.Int {
+	alg := bun.alg
+	wfSum := big.NewInt(0)
+	rslt := big.NewInt(0)
+	for _, mustar := range poly1.Weights() {
+		mu := alg.Dual(mustar)
+		bun.casimirScalar(mu, rslt)
+		rslt.Mul(rslt, poly1.Multiplicity(mustar))
+		rslt.Mul(rslt, poly2.Multiplicity(mu))
+		wfSum.Add(wfSum, rslt)
+	}
+
+	return wfSum
+}
+
+// divisorDenom returns the denominator of Fakhruddin's divisor formula, multiplied
+// by the killing factor.
+func (bun cbbundleImpl) divisorDenom() *big.Rat {
+	alg := bun.alg
+	divDenom := big.NewRat(0, 1)
+	divDenom.SetInt(big.NewInt(int64(2 * (bun.ell + alg.DualCoxeter()) * alg.KillingFactor())))
+
+	return divDenom
 }
 
 // Computes the casimir scalar of the given weight, scaled by the killing form
