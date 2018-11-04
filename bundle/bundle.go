@@ -83,6 +83,64 @@ func (bun cbbundleImpl) Rank() *big.Int {
 	return product.Multiplicity(alg.Dual(wts[0]))
 }
 
+func (bun cbbundleImpl) IntersectFCurve(part1, part2, part3, part4 []int) *big.Int {
+	alg := bun.alg
+	ell := bun.ell
+	retVal := big.NewInt(0)
+	rslt := big.NewInt(0)
+	wtList1 := bun.weightSubList(part1)
+	wtList2 := bun.weightSubList(part2)
+	wtList3 := bun.weightSubList(part3)
+	wtList4 := bun.weightSubList(part4)
+
+	prod1 := alg.Fusion(ell, wtList1...)
+	prod2 := alg.Fusion(ell, wtList2...)
+	prod3 := alg.Fusion(ell, wtList3...)
+	prod4 := alg.Fusion(ell, wtList4...)
+
+	zero := big.NewInt(0)
+	for _, wt1 := range prod1.Weights() {
+		mult1 := prod1.Multiplicity(wt1)
+		if mult1.Cmp(zero) == 0 {
+			continue
+		}
+		for _, wt2 := range prod2.Weights() {
+			mult2 := prod2.Multiplicity(wt2)
+			if mult2.Cmp(zero) == 0 {
+				continue
+			}
+			for _, wt3 := range prod3.Weights() {
+				mult3 := prod3.Multiplicity(wt3)
+				if mult3.Cmp(zero) == 0 {
+					continue
+				}
+				for _, wt4 := range prod4.Weights() {
+					mult4 := prod4.Multiplicity(wt4)
+					if mult4.Cmp(zero) == 0 {
+						continue
+					}
+					rslt.Set(bun.degree(wt1, wt2, wt3, wt4))
+					rslt.Mul(rslt, mult1)
+					rslt.Mul(rslt, mult2)
+					rslt.Mul(rslt, mult3)
+					rslt.Mul(rslt, mult4)
+					retVal.Add(retVal, rslt)
+				}
+			}
+		}
+	}
+
+	return retVal
+}
+
+func (bun cbbundleImpl) weightSubList(part []int) []lie.Weight {
+	wtList := make([]lie.Weight, len(part))
+	for i, wtIndex := range part {
+		wtList[i] = bun.wts[wtIndex]
+	}
+	return wtList
+}
+
 // degree computes the degree of the 4-point bundle determined by the given weights and this
 // bundle's level. This calculation is essentially a normalized divisor calculation
 func (bun cbbundleImpl) degree(wt1, wt2, wt3, wt4 lie.Weight) *big.Int {
@@ -90,6 +148,7 @@ func (bun cbbundleImpl) degree(wt1, wt2, wt3, wt4 lie.Weight) *big.Int {
 	ell := bun.ell
 	rslt := big.NewInt(0)
 	retVal := big.NewInt(0)
+	zero := big.NewInt(0)
 
 	// Compute sum of casimir scalars
 	bun.casimirScalar(wt1, rslt)
@@ -104,6 +163,9 @@ func (bun cbbundleImpl) degree(wt1, wt2, wt3, wt4 lie.Weight) *big.Int {
 	// Multiply by rank of bundle
 	product := alg.Fusion(ell, wt2, wt3, wt4)
 	rk := product.Multiplicity(alg.Dual(wt1))
+	if rk.Cmp(zero) == 0 {
+		return zero
+	}
 	retVal.Mul(retVal, rk)
 
 	// Subtract weighted factorizations
