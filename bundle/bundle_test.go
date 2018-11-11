@@ -375,6 +375,49 @@ func TestDivisor(t *testing.T) {
 	}
 }
 
+func TestSymmetricFCurve(t *testing.T) {
+	cases := []struct {
+		rtsys  lie.RootSystem
+		wt     lie.Weight
+		ell    int
+		n      int
+		fCurve [4][]int
+		want   *big.Int
+	}{
+		{lie.NewTypeARootSystem(2), lie.Weight{0, 0}, 2, 6, [4][]int{{1, 2}, {3, 4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(2), lie.Weight{0, 0}, 2, 6, [4][]int{{1, 2, 3}, {4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(2), lie.Weight{0, 1}, 2, 6, [4][]int{{1, 2}, {3, 4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(2), lie.Weight{0, 1}, 2, 6, [4][]int{{1, 2, 3}, {4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(2), lie.Weight{0, 2}, 2, 6, [4][]int{{1, 2}, {3, 4}, {5}, {6}}, big.NewInt(2)},
+		{lie.NewTypeARootSystem(2), lie.Weight{0, 2}, 2, 6, [4][]int{{1, 2, 3}, {4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(2), lie.Weight{1, 0}, 2, 6, [4][]int{{1, 2}, {3, 4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(2), lie.Weight{1, 0}, 2, 6, [4][]int{{1, 2, 3}, {4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(2), lie.Weight{1, 1}, 2, 6, [4][]int{{1, 2}, {3, 4}, {5}, {6}}, big.NewInt(3)},
+		{lie.NewTypeARootSystem(2), lie.Weight{1, 1}, 2, 6, [4][]int{{1, 2, 3}, {4}, {5}, {6}}, big.NewInt(6)},
+		{lie.NewTypeARootSystem(2), lie.Weight{2, 0}, 2, 6, [4][]int{{1, 2}, {3, 4}, {5}, {6}}, big.NewInt(2)},
+		{lie.NewTypeARootSystem(2), lie.Weight{2, 0}, 2, 6, [4][]int{{1, 2, 3}, {4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(3), lie.Weight{0, 0, 0}, 2, 6, [4][]int{{1, 2}, {3, 4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(3), lie.Weight{0, 0, 0}, 2, 6, [4][]int{{1, 2, 3}, {4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(3), lie.Weight{0, 1, 0}, 2, 6, [4][]int{{1, 2}, {3, 4}, {5}, {6}}, big.NewInt(5)},
+		{lie.NewTypeARootSystem(3), lie.Weight{0, 1, 0}, 2, 6, [4][]int{{1, 2, 3}, {4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(3), lie.Weight{0, 2, 0}, 2, 6, [4][]int{{1, 2}, {3, 4}, {5}, {6}}, big.NewInt(0)},
+		{lie.NewTypeARootSystem(3), lie.Weight{0, 2, 0}, 2, 6, [4][]int{{1, 2, 3}, {4}, {5}, {6}}, big.NewInt(4)},
+		{lie.NewTypeARootSystem(3), lie.Weight{1, 0, 1}, 2, 6, [4][]int{{1, 2}, {3, 4}, {5}, {6}}, big.NewInt(7)},
+		{lie.NewTypeARootSystem(3), lie.Weight{1, 0, 1}, 2, 6, [4][]int{{1, 2, 3}, {4}, {5}, {6}}, big.NewInt(10)},
+	}
+
+	for _, c := range cases {
+		alg := lie.NewAlgebra(c.rtsys)
+		bun := NewSymmetricCBBundle(alg, c.wt, c.ell, c.n)
+		got := bun.IntersectFCurve(c.fCurve[0], c.fCurve[1], c.fCurve[2], c.fCurve[3])
+		if got.Cmp(c.want) != 0 {
+			t.Errorf("For type A CBBundle(wt: %v, ell: %v, n: %v): IntersectFCurve(%v) = %v, want %v",
+				c.wt, c.ell, c.n, c.fCurve, got, c.want)
+		}
+	}
+
+}
+
 func BenchmarkSymmetricCBRank(b *testing.B) {
 	rank := 5
 	level := 4

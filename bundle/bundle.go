@@ -13,6 +13,7 @@ type CBBundle interface {
 	Level() int
 	Points() int
 	Rank() *big.Int
+	IntersectFCurve([]int, []int, []int, []int) *big.Int
 }
 
 // SymCBBundle represents a symmetric conformal blocks bundle.
@@ -136,7 +137,7 @@ func (bun cbbundleImpl) IntersectFCurve(part1, part2, part3, part4 []int) *big.I
 func (bun cbbundleImpl) weightSubList(part []int) []lie.Weight {
 	wtList := make([]lie.Weight, len(part))
 	for i, wtIndex := range part {
-		wtList[i] = bun.wts[wtIndex]
+		wtList[i] = bun.wts[wtIndex-1]
 	}
 	return wtList
 }
