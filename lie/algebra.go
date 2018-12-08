@@ -310,21 +310,6 @@ func (alg algebraImpl) fusionProduct(ell int, wt1, wt2 Weight) MutableWeightPoly
 	return retPoly
 }
 
-func (alg algebraImpl) CBRank(ell int, wts ...Weight) *big.Int {
-	fusProd := alg.fusionProduct(ell, wts[0], wts[1])
-	multiFus := alg.Fusion(ell, wts[2:len(wts)]...)
-
-	retVal := big.NewInt(0)
-	rslt := big.NewInt(0)
-	for _, muStar := range fusProd.Weights() {
-		mult1 := fusProd.Multiplicity(muStar)
-		mu := alg.Dual(muStar)
-		mult2 := multiFus.Multiplicity(mu)
-		retVal.Add(retVal, rslt.Mul(mult1, mult2))
-	}
-	return retVal
-}
-
 func isDominant(wt Weight) bool {
 	for _, coord := range wt {
 		if coord < 0 {
