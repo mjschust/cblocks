@@ -3,7 +3,7 @@ package cblocks
 import (
 	"math/big"
 
-	"github.com/mjschust/cblocks/lie"
+	"github.com/mjschust/lieprod/lie"
 )
 
 // CBBundle represents a conformal blocks bundle.

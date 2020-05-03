@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/mjschust/cblocks/lie"
+	"github.com/mjschust/lieprod/lie"
 )
 
 func TestSymmetricL1Rank(t *testing.T) {
